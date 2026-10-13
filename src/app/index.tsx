@@ -1,98 +1,72 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { useState } from 'react';
+import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
+  const [menu, setMenu] = useState([
+    { id: '1', name: 'Grilled Salmon', course: 'Main', price: 'R 185' },
+    { id: '2', name: 'Chocolate Mousse', course: 'Dessert', price: 'R 65' },
+  ]);
+  const [name, setName] = useState('');
+  const [course, setCourse] = useState('');
+  const [price, setPrice] = useState('');
+
+  const addItem = () => {
+    if (!name || !course || !price) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+    setMenu([...menu, { id: Date.now().toString(), name, course, price: 'R ' + price }]);
+    setName(''); setCourse(''); setPrice('');
+  };
+
+  const removeItem = (id) => {
+    setMenu(menu.filter(item => item.id !== id));
+  };
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View style={styles.container}>
+      <Text style={styles.title}>👨‍🍳 Chef's Menu App</Text>
+      <Text style={styles.subtitle}>Total Dishes: {menu.length}</Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <View style={styles.form}>
+        <TextInput style={styles.input} placeholder="Dish Name e.g. Steak" value={name} onChangeText={setName} />
+        <TextInput style={styles.input} placeholder="Course e.g. Main" value={course} onChangeText={setCourse} />
+        <TextInput style={styles.input} placeholder="Price e.g. 120" value={price} onChangeText={setPrice} keyboardType="numeric" />
+        <TouchableOpacity style={styles.addButton} onPress={addItem}>
+          <Text style={styles.buttonText}>Add Dish +</Text>
+        </TouchableOpacity>
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <FlatList
+        data={menu}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View>
+              <Text style={styles.dishName}>{item.name}</Text>
+              <Text style={styles.course}>{item.course} • {item.price}</Text>
+            </View>
+            <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteButton}>
+              <Text style={styles.deleteText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  container: { flex: 1, backgroundColor: '#fff', padding: 20, paddingTop: 60 },
+  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 },
+  subtitle: { textAlign: 'center', color: 'gray', marginBottom: 20 },
+  form: { marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 10, marginBottom: 10, backgroundColor: '#f9f9f9' },
+  addButton: { backgroundColor: '#000', padding: 15, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderWidth: 1, borderColor: '#eee', borderRadius: 12, marginBottom: 10, backgroundColor: '#fafafa' },
+  dishName: { fontWeight: 'bold', fontSize: 16 },
+  course: { color: 'gray', marginTop: 3 },
+  deleteButton: { backgroundColor: '#ff4444', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  deleteText: { color: '#fff', fontWeight: 'bold' }
 });
